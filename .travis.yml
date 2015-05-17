@@ -1,0 +1,16 @@
+language: objective-c  # Do tests on OS X
+env:
+  matrix:
+    - TOXENV=py27
+    - TOXENV=py34
+cache:
+  directories:
+    - /Library/Caches/Homebrew
+    - /opt/homebrew-cask/Caskroom/
+before_install:
+  - brew tap caskroom/cask
+  - brew install brew-cask python python3
+  - brew cask update
+  - brew cask install astah-community
+install: pip install docutils tox
+script: tox

@@ -1,0 +1,3 @@
+.. toctree::
+
+   subdir/index

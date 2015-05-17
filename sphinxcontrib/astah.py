@@ -6,7 +6,7 @@ from tempfile import mkdtemp
 from shutil import copyfile, rmtree
 from docutils import nodes
 from docutils.parsers.rst.directives.images import Image, Figure
-from sphinx.util.osutil import ensuredir
+from sphinx.util.osutil import ensuredir, relative_uri
 
 
 def find_astah_command(builder):
@@ -58,17 +58,22 @@ class astah_image(nodes.General, nodes.Element):
         finally:
             rmtree(tmpdir, ignore_errors=True)
 
-    def to_image(self, builder):
-        if builder.format == 'html':
-            reldir = "_images"
-            outdir = os.path.join(builder.outdir, '_images')
+    def to_image(self, builder, docname):
+        if hasattr(builder, 'imagedir'):  # Sphinx (>= 1.3.x)
+            imagedir = builder.imagedir
+        elif hasattr(builder, 'imgpath') or builder.format == 'html':  # Sphinx (<= 1.2.x) and HTML writer
+            imagedir = '_images'
         else:
-            reldir = ""
-            outdir = builder.outdir
+            imagedir = ''
+
+        if imagedir:
+            reldir = relative_uri(builder.get_target_uri(docname), imagedir)
+        else:
+            reldir = ''
 
         hashed = sha1((self['filename'] + self['sheet']).encode('utf-8')).hexdigest()
         filename = "astah-%s.png" % hashed
-        path = os.path.join(outdir, filename)
+        path = os.path.join(builder.outdir, imagedir, filename)
         last_modified = os.stat(self['filename']).st_mtime
 
         if not os.path.exists(path) or os.stat(path).st_mtime < last_modified:
@@ -137,7 +142,7 @@ class AstahFigure(Figure):
 
 def on_doctree_resolved(app, doctree, docname):
     for astah in doctree.traverse(astah_image):
-        image_node = astah.to_image(app.builder)
+        image_node = astah.to_image(app.builder, docname)
         astah.replace_self(image_node)
 
 

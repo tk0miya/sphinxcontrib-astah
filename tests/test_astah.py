@@ -42,3 +42,14 @@ class TestSphinxcontrib(unittest.TestCase):
         app.build()
 
         self.assertIn('0 added, 1 changed, 0 removed', status.getvalue())
+
+    @with_app(buildername='html', srcdir="tests/examples/subdir", copy_srcdir_to_tmpdir=True)
+    def test_astah_in_subdir(self, app, status, warnings):
+        app.build()
+        print(status.getvalue(), warnings.getvalue())
+        html = (app.outdir / 'subdir' / 'index.html').read_text()
+        image_files = (app.outdir / '_images').listdir()
+        self.assertEqual(1, len(image_files))
+        image_filename = image_files[0]
+
+        self.assertRegexpMatches(html, '<img alt="(../_images/%s)" src="\\1" />' % image_filename)

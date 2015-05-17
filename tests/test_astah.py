@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import sys
 from time import time
 from sphinx_testing import with_app
@@ -12,6 +13,9 @@ else:
 
 
 class TestSphinxcontrib(unittest.TestCase):
+    def setUp(self):
+        self.skip_image_check = os.environ.get('SKIP_IMAGE_CHECK')
+
     @with_app(buildername='html', srcdir="tests/examples/basic", copy_srcdir_to_tmpdir=True)
     def test_astah(self, app, status, warnings):
         # first build
@@ -24,9 +28,10 @@ class TestSphinxcontrib(unittest.TestCase):
 
         self.assertRegexpMatches(html, '<img alt="(_images/%s)" src="\\1" />' % image_filename)
 
-        expected = path("tests/examples/animal.png").read_bytes()
-        actual = (app.outdir / '_images' / image_filename).read_bytes()
-        self.assertEqual(expected, actual)
+        if not self.skip_image_check:
+            expected = path("tests/examples/animal.png").read_bytes()
+            actual = (app.outdir / '_images' / image_filename).read_bytes()
+            self.assertEqual(expected, actual)
 
         # second build (no updates)
         status.truncate(0)
@@ -65,6 +70,7 @@ class TestSphinxcontrib(unittest.TestCase):
 
         self.assertRegexpMatches(html, '<img alt="(_images/%s)" src="\\1" />' % image_filename)
 
-        expected = path("tests/examples/multipages-2.png").read_bytes()
-        actual = (app.outdir / '_images' / image_filename).read_bytes()
-        self.assertEqual(expected, actual)
+        if not self.skip_image_check:
+            expected = path("tests/examples/multipages-2.png").read_bytes()
+            actual = (app.outdir / '_images' / image_filename).read_bytes()
+            self.assertEqual(expected, actual)

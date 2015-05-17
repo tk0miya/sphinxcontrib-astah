@@ -1,5 +1,7 @@
 language: objective-c  # Do tests on OS X
 env:
+  global:
+    - SKIP_IMAGE_CHECK=1
   matrix:
     - TOXENV=py27
     - TOXENV=py34

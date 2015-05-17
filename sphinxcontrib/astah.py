@@ -101,7 +101,7 @@ class AstahImage(Image):
 
         env = self.state.document.settings.env
         path = env.doc2path(env.docname, base=None)
-        rel_filename = os.path.join(os.path.dirname(path), self.arguments[0])
+        rel_filename = os.path.join(os.path.dirname(path), filename)
         filename = os.path.join(env.srcdir, rel_filename)
         if not os.path.exists(filename):
             raise self.warning('astah file not found: %s' % filename)

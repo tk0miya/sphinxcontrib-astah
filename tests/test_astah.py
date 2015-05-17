@@ -53,3 +53,18 @@ class TestSphinxcontrib(unittest.TestCase):
         image_filename = image_files[0]
 
         self.assertRegexpMatches(html, '<img alt="(../_images/%s)" src="\\1" />' % image_filename)
+
+    @with_app(buildername='html', srcdir="tests/examples/multipages", copy_srcdir_to_tmpdir=True)
+    def test_astah_with_sheet(self, app, status, warnings):
+        app.build()
+        print(status.getvalue(), warnings.getvalue())
+        html = (app.outdir / 'index.html').read_text()
+        image_files = (app.outdir / '_images').listdir()
+        self.assertEqual(1, len(image_files))
+        image_filename = image_files[0]
+
+        self.assertRegexpMatches(html, '<img alt="(_images/%s)" src="\\1" />' % image_filename)
+
+        expected = path("tests/examples/multipages-2.png").read_bytes()
+        actual = (app.outdir / '_images' / image_filename).read_bytes()
+        self.assertEqual(expected, actual)

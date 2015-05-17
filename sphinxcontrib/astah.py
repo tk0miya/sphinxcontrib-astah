@@ -94,9 +94,14 @@ class AstahImage(Image):
             filename = self.arguments[0]
             sheet = ''
 
+        env = self.state.document.settings.env
+        path = env.doc2path(env.docname, base=None)
+        rel_filename = os.path.join(os.path.dirname(path), self.arguments[0])
+        filename = os.path.join(env.srcdir, rel_filename)
         if not os.path.exists(filename):
             raise self.warning('astah file not found: %s' % filename)
 
+        env.note_dependency(rel_filename)
         if isinstance(result[0], nodes.image):
             image = astah_image(filename=filename, sheet=sheet,
                                 **result[0].attributes)

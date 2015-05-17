@@ -1,0 +1,1 @@
+﻿.. astah-image:: animal.asta

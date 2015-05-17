@@ -5,6 +5,7 @@ env:
   matrix:
     - TOXENV=py27
     - TOXENV=py34
+    - TOXENV=coverage
 cache:
   directories:
     - /Library/Caches/Homebrew

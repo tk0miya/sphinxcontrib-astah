@@ -8,7 +8,7 @@ requires = ['Sphinx>=0.6']
 
 setup(
     name='sphinxcontrib-astah',
-    version='0.1.0',
+    version='0.2.0',
     url='https://github.com/tk0miya/sphinxcontrib-astah',
     license='BSD',
     author='Takeshi KOMIYA',

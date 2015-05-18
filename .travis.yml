@@ -5,6 +5,9 @@ env:
   matrix:
     - TOXENV=py27
     - TOXENV=py34
+    - TOXENV=sphinx10
+    - TOXENV=sphinx11
+    - TOXENV=sphinx12
     - TOXENV=coverage
 cache:
   directories:

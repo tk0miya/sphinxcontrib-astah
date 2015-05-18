@@ -86,11 +86,3 @@ Configuration Options
 astah_command_path
 
   path to astah-command.sh (or astah-command.bat)
-
-
-Repository
-==========
-
-This code is hosted by Bitbucket.
-
-  http://bitbucket.org/birkenfeld/sphinx-contrib/

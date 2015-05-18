@@ -58,9 +58,9 @@ class TestSphinxcontrib(unittest.TestCase):
         image_filename = image_files[0]
 
         self.assertRegexpMatches(html,
-                                 ('<div class="figure" id=".*">\s*'
+                                 ('<div class="figure".*?>\s*'
                                   '<img alt="(_images/%s)" src="\\1" />\s*'
-                                  '<p class="caption"><span class="caption-text">caption of figure</span></p>\s*'
+                                  '<p class="caption">(<span class="caption-text">)?caption of figure(</span>)?</p>\s*'
                                   '</div>'
                                   ) % image_filename)
 

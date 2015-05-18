@@ -1,5 +1,15 @@
 sphinxcontrib-astah
 ====================
+
+.. image:: https://travis-ci.org/tk0miya/sphinxcontrib-astah.svg?branch=master
+   :target: https://travis-ci.org/tk0miya/sphinxcontrib-astah
+
+.. image:: https://coveralls.io/repos/tk0miya/sphinxcontrib-astah/badge.png?branch=master
+   :target: https://coveralls.io/r/tk0miya/sphinxcontrib-astah?branch=master
+
+.. image:: https://codeclimate.com/github/tk0miya/sphinxcontrib-astah/badges/gpa.svg
+   :target: https://codeclimate.com/github/tk0miya/sphinxcontrib-astah
+
 This package contains the astah Sphinx extension.
 
 This extension enable you to embed diagrams by astah_ .

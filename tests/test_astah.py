@@ -5,6 +5,7 @@ import sys
 from time import time
 from sphinx_testing import with_app
 from sphinx_testing.path import path
+from sphinxcontrib.astah import Astah
 
 if sys.version_info < (2, 7):
     import unittest2 as unittest
@@ -15,6 +16,12 @@ else:
 class TestSphinxcontrib(unittest.TestCase):
     def setUp(self):
         self.skip_image_check = os.environ.get('SKIP_IMAGE_CHECK')
+
+    @with_app(buildername='html', srcdir="tests/examples/multipages", copy_srcdir_to_tmpdir=True)
+    def test_Astah_extract(self, app, status, warnings):
+        Astah(app).extract(app.srcdir / 'multipages.asta', app.outdir)
+        self.assertEqual(['multipages'], os.listdir(app.outdir))
+        self.assertEqual(['Class Diagram.png', 'Sequence.png'], os.listdir(app.outdir / 'multipages'))
 
     @with_app(buildername='html', srcdir="tests/examples/basic", copy_srcdir_to_tmpdir=True)
     def test_astah(self, app, status, warnings):

@@ -42,35 +42,35 @@ class Astah(object):
             self.warn('Fail to convert astah image (exitcode: %s)' % retcode)
             raise AstahException
 
-
-class astah_image(nodes.General, nodes.Element):
-    def convert_to(self, path, builder):
+    def convert(self, filename, to, sheetname=None):
         try:
             tmpdir = mkdtemp()
-            Astah(builder).extract(self['filename'], tmpdir)
+            self.extract(filename, tmpdir)
 
-            dirname = os.path.splitext(os.path.basename(self['filename']))[0]
-            imagedir = os.path.join(tmpdir, dirname)
-            if self['sheet']:
-                image_path = os.path.join(imagedir, self['sheet'] + '.png')
+            subdirname = os.path.splitext(os.path.basename(filename))[0]
+            imagedir = os.path.join(tmpdir, subdirname)
+            if sheetname:
+                target = os.path.join(imagedir, sheetname + '.png')
             else:
-                image_path = os.path.join(imagedir, os.listdir(imagedir)[0])  # first item in dir
+                target = os.path.join(imagedir, os.listdir(imagedir)[0])  # first item in archive
 
-            if os.path.exists(image_path):
-                ensuredir(os.path.dirname(path))
-                copyfile(image_path, path)
+            if os.path.exists(target):
+                ensuredir(os.path.dirname(to))
+                copyfile(target, to)
                 return True
             else:
-                builder.warn('Fail to convert astah image: unknown sheet [%s]' % self['sheet'])
+                self.warn('Fail to convert astah image: unknown sheet [%s]' % self['sheet'])
                 return False
         except AstahException:
             return False
         except Exception as exc:
-            builder.warn('Fail to convert astah image: %s' % exc)
+            self.warn('Fail to convert astah image: %s' % exc)
             return False
         finally:
             rmtree(tmpdir, ignore_errors=True)
 
+
+class astah_image(nodes.General, nodes.Element):
     def to_image(self, builder, docname):
         if hasattr(builder, 'imagedir'):  # Sphinx (>= 1.3.x)
             imagedir = builder.imagedir
@@ -90,7 +90,7 @@ class astah_image(nodes.General, nodes.Element):
         last_modified = os.stat(self['filename']).st_mtime
 
         if not os.path.exists(path) or os.stat(path).st_mtime < last_modified:
-            ret = self.convert_to(path, builder=builder)
+            ret = Astah(builder).convert(self['filename'], path, sheetname=self['sheet'])
             if ret:
                 os.utime(path, (last_modified, last_modified))
             else:

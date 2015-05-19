@@ -23,6 +23,28 @@ class TestSphinxcontrib(unittest.TestCase):
         self.assertEqual(['multipages'], os.listdir(app.outdir))
         self.assertEqual(['Class Diagram.png', 'Sequence.png'], os.listdir(app.outdir / 'multipages'))
 
+    @with_app(buildername='html', srcdir="tests/examples/multipages", copy_srcdir_to_tmpdir=True)
+    def test_Astah_convert(self, app, status, warnings):
+        # get first sheet
+        ret = Astah(app).convert(app.srcdir / 'multipages.asta',
+                                 app.outdir / 'output1.png')
+        self.assertEqual(True, ret)
+        self.assertIn('output1.png', os.listdir(app.outdir))
+
+        # get sheet with sheet name
+        ret = Astah(app).convert(app.srcdir / 'multipages.asta',
+                                 app.outdir / 'output2.png',
+                                 sheetname='Class Diagram')
+        self.assertEqual(True, ret)
+        self.assertIn('output2.png', os.listdir(app.outdir))
+
+        # get sheet with unknown sheet name
+        ret = Astah(app).convert(app.srcdir / 'multipages.asta',
+                                 app.outdir / 'output3.png',
+                                 sheetname='unknown')
+        self.assertEqual(False, ret)
+        self.assertNotIn('output3.png', os.listdir(app.outdir))
+
     @with_app(buildername='html', srcdir="tests/examples/basic", copy_srcdir_to_tmpdir=True)
     def test_astah(self, app, status, warnings):
         # first build

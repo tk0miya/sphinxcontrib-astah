@@ -70,33 +70,40 @@ class Astah(object):
             rmtree(tmpdir, ignore_errors=True)
 
 
-class astah_image(nodes.General, nodes.Element):
-    def to_image(self, builder, docname):
-        if hasattr(builder, 'imagedir'):  # Sphinx (>= 1.3.x)
-            imagedir = builder.imagedir
-        elif hasattr(builder, 'imgpath') or builder.format == 'html':  # Sphinx (<= 1.2.x) and HTML writer
-            imagedir = '_images'
-        else:
-            imagedir = ''
+def get_imagedir(app, docname):
+    if hasattr(app.builder, 'imagedir'):  # Sphinx (>= 1.3.x)
+        dirname = app.builder.imagedir
+    elif hasattr(app.builder, 'imgpath') or app.builder.format == 'html':  # Sphinx (<= 1.2.x) and HTML writer
+        dirname = '_images'
+    else:
+        dirname = ''
 
-        if imagedir:
-            reldir = relative_uri(builder.get_target_uri(docname), imagedir)
-        else:
-            reldir = ''
+    if dirname:
+        relpath = relative_uri(app.builder.get_target_uri(docname), dirname)
+    else:
+        relpath = ''
+
+    abspath = os.path.join(app.builder.outdir, dirname)
+    return (relpath, abspath)
+
+
+class astah_image(nodes.General, nodes.Element):
+    def to_image(self, app, docname):
+        rel_imagedir, abs_imagedir = get_imagedir(app, docname)
 
         hashed = sha1((self['filename'] + self['sheet']).encode('utf-8')).hexdigest()
         filename = "astah-%s.png" % hashed
-        path = os.path.join(builder.outdir, imagedir, filename)
+        path = os.path.join(abs_imagedir, filename)
         last_modified = os.stat(self['filename']).st_mtime
 
         if not os.path.exists(path) or os.stat(path).st_mtime < last_modified:
-            ret = Astah(builder).convert(self['filename'], path, sheetname=self['sheet'])
+            ret = Astah(app).convert(self['filename'], path, sheetname=self['sheet'])
             if ret:
                 os.utime(path, (last_modified, last_modified))
             else:
                 return nodes.Text('')
 
-        relfn = os.path.join(reldir, filename)
+        relfn = os.path.join(rel_imagedir, filename)
         image_node = nodes.image(candidates={'*': relfn}, **self.attributes)
         image_node['uri'] = relfn
 
@@ -160,7 +167,7 @@ class AstahFigure(Figure):
 
 def on_doctree_resolved(app, doctree, docname):
     for astah in doctree.traverse(astah_image):
-        image_node = astah.to_image(app.builder, docname)
+        image_node = astah.to_image(app, docname)
         astah.replace_self(image_node)
 
 

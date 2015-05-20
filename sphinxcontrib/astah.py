@@ -123,8 +123,8 @@ class AstahImage(Image):
         path = env.doc2path(env.docname, base=None)
         rel_filename = os.path.join(os.path.dirname(path), filename)
         filename = os.path.join(env.srcdir, rel_filename)
-        if not os.path.exists(filename):
-            raise self.warning('astah file not found: %s' % filename)
+        if not os.access(filename, os.R_OK):
+            raise self.warning('astah file not readable: %s' % filename)
 
         env.note_dependency(rel_filename)
         if isinstance(result[0], nodes.image):
@@ -153,8 +153,8 @@ class AstahFigure(Figure):
         path = env.doc2path(env.docname, base=None)
         rel_filename = os.path.join(os.path.dirname(path), filename)
         filename = os.path.join(env.srcdir, rel_filename)
-        if not os.path.exists(filename):
-            raise self.warning('astah file not found: %s' % filename)
+        if not os.access(filename, os.R_OK):
+            raise self.warning('astah file not readable: %s' % filename)
 
         env.note_dependency(rel_filename)
         for node in result[0].traverse(nodes.image):

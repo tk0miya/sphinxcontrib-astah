@@ -13,6 +13,16 @@ class AstahException(Exception):
     pass
 
 
+def if_outdated(fn):
+    def wrap(self, filename, to, **kwargs):
+        if is_outdated(filename, to):
+            return fn(self, filename, to, **kwargs)
+        else:
+            return True
+
+    return wrap
+
+
 class Astah(object):
     def __init__(self, app):
         self.astah_command_path = app.config.astah_command_path
@@ -42,6 +52,7 @@ class Astah(object):
             self.warn('Fail to convert astah image (exitcode: %s)' % retcode)
             raise AstahException
 
+    @if_outdated
     def convert(self, filename, to, sheetname=None):
         try:
             tmpdir = mkdtemp()
@@ -57,6 +68,8 @@ class Astah(object):
             if os.path.exists(target):
                 ensuredir(os.path.dirname(to))
                 copyfile(target, to)
+                last_modified = os.stat(filename).st_mtime
+                os.utime(to, (last_modified, last_modified))
                 return True
             else:
                 self.warn('Fail to convert astah image: unknown sheet [%s]' % self['sheet'])
@@ -106,13 +119,9 @@ class astah_image(nodes.General, nodes.Element):
         filename = "astah-%s.png" % hashed
         path = os.path.join(abs_imagedir, filename)
 
-        if is_outdated(self['filename'], path):
-            ret = Astah(app).convert(self['filename'], path, sheetname=self['sheet'])
-            if ret:
-                last_modified = os.stat(self['filename']).st_mtime
-                os.utime(path, (last_modified, last_modified))
-            else:
-                return nodes.Text('')
+        ret = Astah(app).convert(self['filename'], path, sheetname=self['sheet'])
+        if ret is False:
+            return nodes.Text('')
 
         relfn = os.path.join(rel_imagedir, filename)
         image_node = nodes.image(candidates={'*': relfn}, **self.attributes)

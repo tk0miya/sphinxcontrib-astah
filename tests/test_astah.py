@@ -3,9 +3,9 @@
 import os
 import sys
 from time import time
-from sphinx_testing import with_app
+from sphinx_testing import with_app, with_tmpdir
 from sphinx_testing.path import path
-from sphinxcontrib.astah import Astah, get_imagedir
+from sphinxcontrib.astah import Astah, get_imagedir, is_outdated
 
 if sys.version_info < (2, 7):
     import unittest2 as unittest
@@ -68,6 +68,32 @@ class TestSphinxcontrib(unittest.TestCase):
         (relpath, abspath) = get_imagedir(app, 'subdir/index')
         self.assertEqual('', relpath)
         self.assertEqual(os.path.join(app.outdir, ''), abspath)
+
+    @with_tmpdir
+    def test_is_outdated(self, dir):
+        source = dir / 'source.asta'
+        destination = dir / 'output.png'
+
+        # source file not exists
+        self.assertEqual(False, is_outdated(source, destination))
+
+        # destination file not exists
+        source.write_text('')
+        self.assertEqual(True, is_outdated(source, destination))
+
+        # destination file is newer than source
+        last_modified = os.stat(source).st_mtime
+        destination.write_text('')
+        destination.utime((last_modified + 1, last_modified + 1))
+        self.assertEqual(False, is_outdated(source, destination))
+
+        # destination file is older than source
+        destination.utime((last_modified - 1, last_modified - 1))
+        self.assertEqual(True, is_outdated(source, destination))
+
+        # source and destination files are modified at same time
+        destination.utime((last_modified, last_modified))
+        self.assertEqual(False, is_outdated(source, destination))
 
     @with_app(buildername='html', srcdir="tests/examples/basic", copy_srcdir_to_tmpdir=True)
     def test_astah(self, app, status, warnings):

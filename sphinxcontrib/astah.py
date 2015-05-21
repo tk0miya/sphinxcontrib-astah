@@ -87,6 +87,17 @@ def get_imagedir(app, docname):
     return (relpath, abspath)
 
 
+def is_outdated(astah_path, png_path):
+    if not os.path.exists(astah_path):
+        return False
+    else:
+        last_modified = os.stat(astah_path).st_mtime
+        if not os.path.exists(png_path) or os.stat(png_path).st_mtime < last_modified:
+            return True
+        else:
+            return False
+
+
 class astah_image(nodes.General, nodes.Element):
     def to_image(self, app, docname):
         rel_imagedir, abs_imagedir = get_imagedir(app, docname)
@@ -94,11 +105,11 @@ class astah_image(nodes.General, nodes.Element):
         hashed = sha1((self['filename'] + self['sheet']).encode('utf-8')).hexdigest()
         filename = "astah-%s.png" % hashed
         path = os.path.join(abs_imagedir, filename)
-        last_modified = os.stat(self['filename']).st_mtime
 
-        if not os.path.exists(path) or os.stat(path).st_mtime < last_modified:
+        if is_outdated(self['filename'], path):
             ret = Astah(app).convert(self['filename'], path, sheetname=self['sheet'])
             if ret:
+                last_modified = os.stat(self['filename']).st_mtime
                 os.utime(path, (last_modified, last_modified))
             else:
                 return nodes.Text('')

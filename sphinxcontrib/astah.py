@@ -115,11 +115,11 @@ class astah_image(nodes.General, nodes.Element):
     def to_image(self, app, docname):
         rel_imagedir, abs_imagedir = get_imagedir(app, docname)
 
-        hashed = sha1((self['filename'] + self['sheet']).encode('utf-8')).hexdigest()
+        hashed = sha1((self['uri'] + self['sheet']).encode('utf-8')).hexdigest()
         filename = "astah-%s.png" % hashed
         path = os.path.join(abs_imagedir, filename)
 
-        ret = Astah(app).convert(self['filename'], path, sheetname=self['sheet'])
+        ret = Astah(app).convert(self['uri'], path, sheetname=self['sheet'])
         if ret is False:
             return nodes.Text('')
 
@@ -148,13 +148,13 @@ class AstahImage(Image):
 
         env.note_dependency(rel_filename)
         if isinstance(result[0], nodes.image):
-            image = astah_image(filename=filename, sheet=sheet,
-                                **result[0].attributes)
+            image = astah_image(sheet=sheet, **result[0].attributes)
+            image['uri'] = filename
             result[0] = image
         else:
             for node in result[0].traverse(nodes.image):
-                image = astah_image(filename=filename, sheet=sheet,
-                                    **node.attributes)
+                image = astah_image(sheet=sheet, **node.attributes)
+                image['uri'] = filename
                 node.replace_self(image)
 
         return result
@@ -178,8 +178,8 @@ class AstahFigure(Figure):
 
         env.note_dependency(rel_filename)
         for node in result[0].traverse(nodes.image):
-            image = astah_image(filename=filename, sheet=sheet,
-                                **node.attributes)
+            image = astah_image(sheet=sheet, **node.attributes)
+            image['uri'] = filename
             node.replace_self(image)
 
         return result

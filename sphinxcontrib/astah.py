@@ -119,7 +119,8 @@ class astah_image(nodes.General, nodes.Element):
         filename = "astah-%s.png" % hashed
         path = os.path.join(abs_imagedir, filename)
 
-        ret = Astah(app).convert(self['uri'], path, sheetname=self['sheet'])
+        astah_filename = os.path.join(app.srcdir, self['uri'])
+        ret = Astah(app).convert(astah_filename, path, sheetname=self['sheet'])
         if ret is False:
             return nodes.Text('')
 
@@ -149,12 +150,12 @@ class AstahImage(Image):
         env.note_dependency(rel_filename)
         if isinstance(result[0], nodes.image):
             image = astah_image(sheet=sheet, **result[0].attributes)
-            image['uri'] = filename
+            image['uri'] = rel_filename
             result[0] = image
         else:
             for node in result[0].traverse(nodes.image):
                 image = astah_image(sheet=sheet, **node.attributes)
-                image['uri'] = filename
+                image['uri'] = rel_filename
                 node.replace_self(image)
 
         return result
@@ -179,7 +180,7 @@ class AstahFigure(Figure):
         env.note_dependency(rel_filename)
         for node in result[0].traverse(nodes.image):
             image = astah_image(sheet=sheet, **node.attributes)
-            image['uri'] = filename
+            image['uri'] = rel_filename
             node.replace_self(image)
 
         return result

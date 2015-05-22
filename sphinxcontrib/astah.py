@@ -203,7 +203,7 @@ def on_doctree_read(app, doctree):
     for image in doctree.traverse(nodes.image):
         if 'option' in image:
             options = cgi.parse_qs(image.get('option'))
-            for name, option in options.iteritems():
+            for name, option in options.items():
                 image[name] = option.pop()
 
 

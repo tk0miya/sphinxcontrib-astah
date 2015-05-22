@@ -1,5 +1,6 @@
 import os
 import subprocess
+import pkg_resources
 from glob import glob
 from hashlib import sha1
 from tempfile import mkdtemp
@@ -225,3 +226,8 @@ def setup(app):
     app.connect('doctree-resolved', on_doctree_resolved)
 
     app.add_config_value('astah_command_path', None, 'html')
+    return {
+        'version': pkg_resources.require('sphinxcontrib-astah')[0].version,
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+    }

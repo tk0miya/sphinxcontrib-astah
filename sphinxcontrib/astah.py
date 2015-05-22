@@ -112,23 +112,27 @@ def is_outdated(astah_path, png_path):
 
 
 class astah_image(nodes.General, nodes.Element):
-    def to_image(self, app, docname):
-        rel_imagedir, abs_imagedir = get_imagedir(app, docname)
+    pass
 
-        hashed = sha1((self['uri'] + self['sheet']).encode('utf-8')).hexdigest()
-        filename = "astah-%s.png" % hashed
-        path = os.path.join(abs_imagedir, filename)
 
-        astah_filename = os.path.join(app.srcdir, self['uri'])
-        ret = Astah(app).convert(astah_filename, path, sheetname=self['sheet'])
-        if ret is False:
-            return nodes.Text('')
+def visit_astah_image(app, docname, node):
+    rel_imagedir, abs_imagedir = get_imagedir(app, docname)
 
-        relfn = os.path.join(rel_imagedir, filename)
-        image_node = nodes.image(candidates={'*': relfn}, **self.attributes)
-        image_node['uri'] = relfn
+    hashed = sha1((node['uri'] + node.get('sheet', '')).encode('utf-8')).hexdigest()
+    filename = "astah-%s.png" % hashed
+    path = os.path.join(abs_imagedir, filename)
 
-        return image_node
+    astah_filename = os.path.join(app.srcdir, node['uri'])
+    ret = Astah(app).convert(astah_filename, path, sheetname=node.get('sheet'))
+    if ret is False:
+        node.replace_self(nodes.Text(''))
+
+    relfn = os.path.join(rel_imagedir, filename)
+    image_node = nodes.image(**node.attributes)
+    image_node['candidates'] = {'*': relfn}
+    image_node['uri'] = relfn
+
+    node.replace_self(image_node)
 
 
 class AstahImage(Image):
@@ -188,8 +192,7 @@ class AstahFigure(Figure):
 
 def on_doctree_resolved(app, doctree, docname):
     for astah in doctree.traverse(astah_image):
-        image_node = astah.to_image(app, docname)
-        astah.replace_self(image_node)
+        visit_astah_image(app, docname, astah)
 
 
 def setup(app):

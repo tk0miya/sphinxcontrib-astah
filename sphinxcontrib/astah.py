@@ -136,9 +136,9 @@ def visit_astah_image(app, docname, node):
     node.replace_self(image_node)
 
 
-class AstahImage(Image):
+class AstahImageMixIn(object):
     def run(self):
-        result = super(AstahImage, self).run()
+        result = super(AstahImageMixIn, self).run()
         if '#' in self.arguments[0]:
             filename, sheet = self.arguments[0].split('#', 1)
         else:
@@ -166,29 +166,12 @@ class AstahImage(Image):
         return result
 
 
-class AstahFigure(Figure):
-    def run(self):
-        result = super(AstahFigure, self).run()
-        if '#' in self.arguments[0]:
-            filename, sheet = self.arguments[0].split('#', 1)
-        else:
-            filename = self.arguments[0]
-            sheet = ''
+class AstahImage(AstahImageMixIn, Image):
+    pass
 
-        env = self.state.document.settings.env
-        path = env.doc2path(env.docname, base=None)
-        rel_filename = os.path.join(os.path.dirname(path), filename)
-        filename = os.path.join(env.srcdir, rel_filename)
-        if not os.access(filename, os.R_OK):
-            raise self.warning('astah file not readable: %s' % self.arguments[0])
 
-        env.note_dependency(rel_filename)
-        for node in result[0].traverse(nodes.image):
-            image = astah_image(sheet=sheet, **node.attributes)
-            image['uri'] = rel_filename
-            node.replace_self(image)
-
-        return result
+class AstahFigure(AstahImageMixIn, Figure):
+    pass
 
 
 def on_builder_inited(app):

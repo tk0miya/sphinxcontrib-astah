@@ -190,15 +190,38 @@ class AstahFigure(Figure):
         return result
 
 
+def on_builder_inited(app):
+    from docutils.parsers.rst import directives
+    from docutils.parsers.rst.directives.images import Image, Figure
+
+    Image.option_spec['option'] = directives.unchanged
+    Figure.option_spec['option'] = directives.unchanged
+
+
+def on_doctree_read(app, doctree):
+    import cgi
+    for image in doctree.traverse(nodes.image):
+        if 'option' in image:
+            options = cgi.parse_qs(image.get('option'))
+            for name, option in options.iteritems():
+                image[name] = option.pop()
+
+
 def on_doctree_resolved(app, doctree, docname):
     for astah in doctree.traverse(astah_image):
         visit_astah_image(app, docname, astah)
+
+    for image in doctree.traverse(nodes.image):
+        if image['uri'].lower().endswith('.asta'):
+            visit_astah_image(app, docname, image)
 
 
 def setup(app):
     app.add_node(astah_image)
     app.add_directive('astah-image', AstahImage)
     app.add_directive('astah-figure', AstahFigure)
+    app.connect('builder-inited', on_builder_inited)
+    app.connect('doctree-read', on_doctree_read)
     app.connect('doctree-resolved', on_doctree_resolved)
 
     app.add_config_value('astah_command_path', None, 'html')

@@ -1,3 +1,3 @@
-﻿.. astah-figure:: animal.asta
+﻿.. figure:: animal.asta
 
    caption of figure

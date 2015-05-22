@@ -127,7 +127,7 @@ class TestSphinxcontrib(unittest.TestCase):
 
         self.assertIn('0 added, 1 changed, 0 removed', status.getvalue())
 
-    @with_app(buildername='html', srcdir="tests/examples/figure", copy_srcdir_to_tmpdir=True)
+    @with_app(buildername='html', srcdir="tests/examples/astah_figure", copy_srcdir_to_tmpdir=True)
     def test_astah_figure(self, app, status, warnings):
         app.build()
         print(status.getvalue(), warnings.getvalue())
@@ -167,5 +167,58 @@ class TestSphinxcontrib(unittest.TestCase):
 
         if not self.skip_image_check:
             expected = path("tests/examples/multipages-2.png").read_bytes()
+            actual = (app.outdir / '_images' / image_filename).read_bytes()
+            self.assertEqual(expected, actual)
+
+    @with_app(buildername='html', srcdir="tests/examples/image", copy_srcdir_to_tmpdir=True)
+    def test_image(self, app, status, warnings):
+        app.build()
+        print(status.getvalue(), warnings.getvalue())
+        html = (app.outdir / 'index.html').read_text()
+        image_files = (app.outdir / '_images').listdir()
+        self.assertEqual(1, len(image_files))
+        image_filename = image_files[0]
+
+        self.assertRegexpMatches(html, '<img alt="(_images/%s)" src="\\1" />' % image_filename)
+
+        if not self.skip_image_check:
+            expected = path("tests/examples/animal.png").read_bytes()
+            actual = (app.outdir / '_images' / image_filename).read_bytes()
+            self.assertEqual(expected, actual)
+
+    @with_app(buildername='html', srcdir="tests/examples/image_option", copy_srcdir_to_tmpdir=True)
+    def test_image_option(self, app, status, warnings):
+        app.build()
+        print(status.getvalue(), warnings.getvalue())
+        html = (app.outdir / 'index.html').read_text()
+        image_files = (app.outdir / '_images').listdir()
+        self.assertEqual(1, len(image_files))
+        image_filename = image_files[0]
+
+        self.assertRegexpMatches(html, '<img alt="(_images/%s)" src="\\1" />' % image_filename)
+
+        if not self.skip_image_check:
+            expected = path("tests/examples/multipages-2.png").read_bytes()
+            actual = (app.outdir / '_images' / image_filename).read_bytes()
+            self.assertEqual(expected, actual)
+
+    @with_app(buildername='html', srcdir="tests/examples/figure", copy_srcdir_to_tmpdir=True)
+    def test_figure(self, app, status, warnings):
+        app.build()
+        print(status.getvalue(), warnings.getvalue())
+        html = (app.outdir / 'index.html').read_text()
+        image_files = (app.outdir / '_images').listdir()
+        self.assertEqual(1, len(image_files))
+        image_filename = image_files[0]
+
+        self.assertRegexpMatches(html,
+                                 ('<div class="figure".*?>\s*'
+                                  '<img alt="(_images/%s)" src="\\1" />\s*'
+                                  '<p class="caption">(<span class="caption-text">)?caption of figure(</span>)?</p>\s*'
+                                  '</div>'
+                                  ) % image_filename)
+
+        if not self.skip_image_check:
+            expected = path("tests/examples/animal.png").read_bytes()
             actual = (app.outdir / '_images' / image_filename).read_bytes()
             self.assertEqual(expected, actual)

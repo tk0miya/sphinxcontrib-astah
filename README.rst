@@ -15,6 +15,8 @@ This package contains the astah Sphinx extension.
 This extension enable you to embed diagrams by astah_ .
 Following code is sample::
 
+  .. image:: [filename]
+
   .. astah-image:: [filename]
 
   .. astah-figure:: [filename]
@@ -51,6 +53,22 @@ And set your API key to ``astah_command_path``::
 
 Directive
 =========
+
+`.. image:: [filename]`, `.. figure:: [filename]`
+
+  With this extension, `image` and `figure` directives can embed astah image to documents.
+  At the same time, the directives accept `sheet` parameter through `:option:` option.
+
+  Examples::
+
+    .. image:: my-diagram.asta
+
+    .. figure:: my-diagram.asta
+
+       caption
+
+    .. image:: my-diagram.asta
+       :option: sheet=class-diagram
 
 `.. astah-image:: [filename]`
 

@@ -5,23 +5,15 @@ from glob import glob
 from hashlib import sha1
 from tempfile import mkdtemp
 from shutil import copyfile, rmtree
-from docutils import nodes
-from docutils.parsers.rst.directives.images import Image, Figure
-from sphinx.util.osutil import ensuredir, relative_uri
+from docutils.parsers.rst import directives
+from sphinx.util.osutil import ensuredir
+from sphinxcontrib.imagehelper import (
+    ImageConverter, add_image_type, generate_image_directive, generate_figure_directive
+)
 
 
 class AstahException(Exception):
     pass
-
-
-def if_outdated(fn):
-    def wrap(self, filename, to, **kwargs):
-        if is_outdated(filename, to):
-            return fn(self, filename, to, **kwargs)
-        else:
-            return True
-
-    return wrap
 
 
 class Astah(object):
@@ -53,7 +45,6 @@ class Astah(object):
             self.warn('Fail to convert astah image (exitcode: %s)' % retcode)
             raise AstahException
 
-    @if_outdated
     def convert(self, filename, to, sheetname=None):
         try:
             tmpdir = mkdtemp()
@@ -69,8 +60,6 @@ class Astah(object):
             if os.path.exists(target):
                 ensuredir(os.path.dirname(to))
                 copyfile(target, to)
-                last_modified = os.stat(filename).st_mtime
-                os.utime(to, (last_modified, last_modified))
                 return True
             else:
                 self.warn('Fail to convert astah image: unknown sheet [%s]' % self['sheet'])
@@ -83,132 +72,51 @@ class Astah(object):
         finally:
             rmtree(tmpdir, ignore_errors=True)
 
-
-def get_imagedir(app, docname):
-    if hasattr(app.builder, 'imagedir'):  # Sphinx (>= 1.3.x)
-        dirname = app.builder.imagedir
-    elif hasattr(app.builder, 'imgpath') or app.builder.format == 'html':  # Sphinx (<= 1.2.x) and HTML writer
-        dirname = '_images'
-    else:
-        dirname = ''
-
-    if dirname:
-        relpath = relative_uri(app.builder.get_target_uri(docname), dirname)
-    else:
-        relpath = ''
-
-    abspath = os.path.join(app.builder.outdir, dirname)
-    return (relpath, abspath)
+Image = generate_image_directive('astah')
+Figure = generate_figure_directive('astah')
 
 
-def is_outdated(astah_path, png_path):
-    if not os.path.exists(astah_path):
-        return False
-    else:
-        last_modified = os.stat(astah_path).st_mtime
-        if not os.path.exists(png_path) or os.stat(png_path).st_mtime < last_modified:
-            return True
-        else:
-            return False
-
-
-class astah_image(nodes.General, nodes.Element):
-    pass
-
-
-def visit_astah_image(app, docname, node):
-    rel_imagedir, abs_imagedir = get_imagedir(app, docname)
-
-    hashed = sha1((node['uri'] + node.get('sheet', '')).encode('utf-8')).hexdigest()
-    filename = "astah-%s.png" % hashed
-    path = os.path.join(abs_imagedir, filename)
-
-    astah_filename = os.path.join(app.srcdir, node['uri'])
-    ret = Astah(app).convert(astah_filename, path, sheetname=node.get('sheet'))
-    if ret is False:
-        node.replace_self(nodes.Text(''))
-
-    relfn = os.path.join(rel_imagedir, filename)
-    image_node = nodes.image(**node.attributes)
-    image_node['candidates'] = {'*': relfn}
-    image_node['uri'] = relfn
-
-    node.replace_self(image_node)
-
-
-class AstahImageMixIn(object):
-    def run(self):
-        result = super(AstahImageMixIn, self).run()
+class AstahMixIn(object):
+    def prerun(self):
         if '#' in self.arguments[0]:
-            filename, sheet = self.arguments[0].split('#', 1)
+            filename, sheetname = self.arguments[0].split('#', 1)
+            self.arguments[0] = filename
+            self.sheetname = sheetname
         else:
-            filename = self.arguments[0]
-            sheet = ''
+            self.sheetname = None
 
-        env = self.state.document.settings.env
-        path = env.doc2path(env.docname, base=None)
-        rel_filename = os.path.join(os.path.dirname(path), filename)
-        filename = os.path.join(env.srcdir, rel_filename)
-        if not os.access(filename, os.R_OK):
-            raise self.warning('astah file not readable: %s' % self.arguments[0])
-
-        env.note_dependency(rel_filename)
-        if isinstance(result[0], nodes.image):
-            image = astah_image(sheet=sheet, **result[0].attributes)
-            image['uri'] = rel_filename
-            result[0] = image
-        else:
-            for node in result[0].traverse(nodes.image):
-                image = astah_image(sheet=sheet, **node.attributes)
-                image['uri'] = rel_filename
-                node.replace_self(image)
-
-        return result
+    def postrun(self, node):
+        node['sheet'] = self.sheetname or ''
 
 
-class AstahImage(AstahImageMixIn, Image):
+class AstahImage(AstahMixIn, Image):
     pass
 
 
-class AstahFigure(AstahImageMixIn, Figure):
+class AstahFigure(AstahMixIn, Figure):
     pass
 
 
-def on_builder_inited(app):
-    from docutils.parsers.rst import directives
-    from docutils.parsers.rst.directives.images import Image, Figure
+class AstahImageConverter(ImageConverter):
+    option_spec = {
+        'sheet': directives.unchanged
+    }
 
-    Image.option_spec['option'] = directives.unchanged
-    Figure.option_spec['option'] = directives.unchanged
+    def get_filename_for(self, node):
+        hashed = sha1((node['uri'] + node.get('sheet', '')).encode('utf-8')).hexdigest()
+        return "astah-%s.png" % hashed
 
-
-def on_doctree_read(app, doctree):
-    import cgi
-    for image in doctree.traverse(nodes.image):
-        if 'option' in image:
-            options = cgi.parse_qs(image.get('option'))
-            for name, option in options.items():
-                image[name] = option.pop()
-
-
-def on_doctree_resolved(app, doctree, docname):
-    for astah in doctree.traverse(astah_image):
-        visit_astah_image(app, docname, astah)
-
-    for image in doctree.traverse(nodes.image):
-        if image['uri'].lower().endswith('.asta'):
-            visit_astah_image(app, docname, image)
+    def convert(self, node, filename, to):
+        return Astah(self.app).convert(filename, to, sheetname=node.get('sheet'))
 
 
 def setup(app):
-    app.add_node(astah_image)
+    add_image_type(app, 'astah', 'asta', AstahImageConverter)
+
     app.add_directive('astah-image', AstahImage)
     app.add_directive('astah-figure', AstahFigure)
-    app.connect('builder-inited', on_builder_inited)
-    app.connect('doctree-read', on_doctree_read)
-    app.connect('doctree-resolved', on_doctree_resolved)
-
     app.add_config_value('astah_command_path', None, 'html')
+
     return {
         'version': pkg_resources.require('sphinxcontrib-astah')[0].version,
         'parallel_read_safe': True,

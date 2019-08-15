@@ -53,7 +53,10 @@ class Astah(object):
             subdirname = os.path.splitext(os.path.basename(filename))[0]
             imagedir = os.path.join(tmpdir, subdirname)
             if sheetname:
-                target = os.path.join(imagedir, sheetname + '.png')
+                for root, dirs, files in os.walk(imagedir):
+                    if sheetname + '.png' in files:
+                        target = os.path.join(root, sheetname + '.png')
+
             else:
                 target = os.path.join(imagedir, os.listdir(imagedir)[0])  # first item in archive
 
@@ -62,7 +65,7 @@ class Astah(object):
                 copyfile(target, to)
                 return True
             else:
-                self.warn('Fail to convert astah image: unknown sheet [%s]' % self['sheet'])
+                self.warn('Fail to convert astah image: unknown sheet [%s]' % sheetname)
                 return False
         except AstahException:
             return False

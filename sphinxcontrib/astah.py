@@ -7,10 +7,12 @@ from tempfile import mkdtemp
 from shutil import copyfile, rmtree
 from docutils.parsers.rst import directives
 from sphinx.util.osutil import ensuredir
+from sphinx.util import logging
 from sphinxcontrib.imagehelper import (
     ImageConverter, add_image_type, generate_image_directive, generate_figure_directive
 )
 
+logger = logging.getLogger(__name__)
 
 class AstahException(Exception):
     pass
@@ -19,7 +21,6 @@ class AstahException(Exception):
 class Astah(object):
     def __init__(self, app):
         self.astah_command_path = app.config.astah_command_path
-        self.warn = app.warn
 
     @property
     def command_path(self):
@@ -36,13 +37,13 @@ class Astah(object):
 
     def extract(self, filename, dir):
         if self.command_path is None:
-            self.warn('astah-command.sh (or .bat) not found. set astah_command_path in your conf.py')
+            logger.warning('astah-command.sh (or .bat) not found. set astah_command_path in your conf.py')
             raise AstahException
 
         command_args = [self.command_path, '-image', 'all', '-f', filename, '-o', dir]
         retcode = subprocess.call(command_args)
         if retcode != 0:
-            self.warn('Fail to convert astah image (exitcode: %s)' % retcode)
+            logger.warning('Fail to convert astah image (exitcode: %s)' % retcode)
             raise AstahException
 
     def convert(self, filename, to, sheetname=None):
@@ -65,12 +66,12 @@ class Astah(object):
                 copyfile(target, to)
                 return True
             else:
-                self.warn('Fail to convert astah image: unknown sheet [%s]' % sheetname)
+                logger.warning('Fail to convert astah image: unknown sheet [%s]' % sheetname)
                 return False
         except AstahException:
             return False
         except Exception as exc:
-            self.warn('Fail to convert astah image: %s' % exc)
+            logger.warning('Fail to convert astah image: %s' % exc)
             return False
         finally:
             rmtree(tmpdir, ignore_errors=True)

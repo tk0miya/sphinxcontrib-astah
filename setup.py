@@ -4,11 +4,11 @@ from setuptools import setup, find_packages
 
 long_desc = open('README.rst').read()
 
-requires = ['Sphinx>=0.6', 'sphinxcontrib-imagehelper']
+requires = ['Sphinx>=3.0', 'sphinxcontrib-imagehelper>=1.1.2']
 
 setup(
     name='sphinxcontrib-astah',
-    version='1.0.0',
+    version='1.0.1',
     url='https://github.com/tk0miya/sphinxcontrib-astah',
     license='BSD',
     author='Takeshi KOMIYA',
@@ -25,10 +25,10 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Documentation',
         'Topic :: Documentation :: Sphinx',
         'Topic :: Utilities',

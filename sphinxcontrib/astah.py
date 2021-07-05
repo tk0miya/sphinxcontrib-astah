@@ -7,10 +7,12 @@ from tempfile import mkdtemp
 from shutil import copyfile, rmtree
 from docutils.parsers.rst import directives
 from sphinx.util.osutil import ensuredir
+from sphinx.util import logging
 from sphinxcontrib.imagehelper import (
     ImageConverter, add_image_type, generate_image_directive, generate_figure_directive
 )
 
+logger = logging.getLogger(__name__)
 
 class AstahException(Exception):
     pass
@@ -19,12 +21,15 @@ class AstahException(Exception):
 class Astah(object):
     def __init__(self, app):
         self.astah_command_path = app.config.astah_command_path
-        self.warn = app.warn
 
-    @property
-    def command_path(self):
-        if self.astah_command_path:
+    def get_command_path(self, filename):
+        if isinstance(self.astah_command_path, str):
             return self.astah_command_path
+
+        if isinstance(self.astah_command_path, dict):
+           for ext, path in self.astah_command_path.items():
+               if filename.find('.' + ext) > 0:
+                   return path
 
         patterns = ['/Applications/astah*/astah-command.sh']  # Mac OS X
         for pattern in patterns:
@@ -35,14 +40,15 @@ class Astah(object):
         return None
 
     def extract(self, filename, dir):
-        if self.command_path is None:
-            self.warn('astah-command.sh (or .bat) not found. set astah_command_path in your conf.py')
+        command_path = self.get_command_path(filename)
+        if command_path is None:
+            logger.warning('astah-command.sh (or .bat) not found. set astah_command_path in your conf.py')
             raise AstahException
 
-        command_args = [self.command_path, '-image', 'all', '-f', filename, '-o', dir]
+        command_args = [command_path, '-image', 'all', '-f', filename, '-o', dir]
         retcode = subprocess.call(command_args)
         if retcode != 0:
-            self.warn('Fail to convert astah image (exitcode: %s)' % retcode)
+            logger.warning('Fail to convert astah image (exitcode: %s)' % retcode)
             raise AstahException
 
     def convert(self, filename, to, sheetname=None):
@@ -53,7 +59,10 @@ class Astah(object):
             subdirname = os.path.splitext(os.path.basename(filename))[0]
             imagedir = os.path.join(tmpdir, subdirname)
             if sheetname:
-                target = os.path.join(imagedir, sheetname + '.png')
+                for root, dirs, files in os.walk(imagedir):
+                    if sheetname + '.png' in files:
+                        target = os.path.join(root, sheetname + '.png')
+
             else:
                 target = os.path.join(imagedir, os.listdir(imagedir)[0])  # first item in archive
 
@@ -62,12 +71,12 @@ class Astah(object):
                 copyfile(target, to)
                 return True
             else:
-                self.warn('Fail to convert astah image: unknown sheet [%s]' % self['sheet'])
+                logger.warning('Fail to convert astah image: unknown sheet [%s]' % sheetname)
                 return False
         except AstahException:
             return False
         except Exception as exc:
-            self.warn('Fail to convert astah image: %s' % exc)
+            logger.warning('Fail to convert astah image: %s' % exc)
             return False
         finally:
             rmtree(tmpdir, ignore_errors=True)

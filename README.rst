@@ -103,4 +103,4 @@ Configuration Options
 
 astah_command_path
 
-  path to astah-command.sh (or astah-command.bat)
+  path to astah-command.sh (or astah-command.bat). This can be a simple string or a dictionary of paths based on file extensions.

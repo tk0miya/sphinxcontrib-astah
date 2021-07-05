@@ -22,10 +22,14 @@ class Astah(object):
     def __init__(self, app):
         self.astah_command_path = app.config.astah_command_path
 
-    @property
-    def command_path(self):
-        if self.astah_command_path:
+    def get_command_path(self, filename):
+        if isinstance(self.astah_command_path, str):
             return self.astah_command_path
+
+        if isinstance(self.astah_command_path, dict):
+           for ext, path in self.astah_command_path.items():
+               if filename.find('.' + ext) > 0:
+                   return path
 
         patterns = ['/Applications/astah*/astah-command.sh']  # Mac OS X
         for pattern in patterns:
@@ -36,11 +40,12 @@ class Astah(object):
         return None
 
     def extract(self, filename, dir):
-        if self.command_path is None:
+        command_path = self.get_command_path(filename)
+        if command_path is None:
             logger.warning('astah-command.sh (or .bat) not found. set astah_command_path in your conf.py')
             raise AstahException
 
-        command_args = [self.command_path, '-image', 'all', '-f', filename, '-o', dir]
+        command_args = [command_path, '-image', 'all', '-f', filename, '-o', dir]
         retcode = subprocess.call(command_args)
         if retcode != 0:
             logger.warning('Fail to convert astah image (exitcode: %s)' % retcode)
